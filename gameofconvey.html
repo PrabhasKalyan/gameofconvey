@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hexagon Grid</title>
+    <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.0.0-rc.5/dist/html2canvas.min.js"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+</head>
+<body>
+  <button>Click</button>
+    <div class="grid-container">
+
+        </div>
+</body>
+<style>
+  body{
+    background-color: black;
+  }
+    .grid-container {
+  display: grid;
+  grid-template-rows: auto;
+  grid-template-columns: auto ;
+}
+
+.hexagon {
+  width: 5vw; /* Adjust width as needed */
+  height: 5vw; /* Adjust height as needed */
+  background-color: red;
+  margin: 0.25px;/* Adjust margin for spacing */
+  clip-path: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%);/* creates a hexagon shape */
+}
+
+</style>
+    <script>
+      /* Initislises generarion count */
+      var gen=0;
+        const gridContainer = document.querySelector('.grid-container');
+        var size;
+      /* initialises grid with hexagons */
+      function grid(size){
+        for(var i=1;i<(size+1);i++){
+          for (var j=1;j<(size+1);j++){
+            const hexagon = document.createElement('div');
+            hexagon.classList.add('hexagon');
+            hexagon.style.gridColumn=j+'/'+(j+1);
+            hexagon.style.gridRow=i+'/'+(i+1);
+            gridContainer.appendChild(hexagon); 
+            hexagon.style.width=100/size+"vw";
+            hexagon.style.height=100/size +"vw";
+          }
+        }        
+      }
+
+      grid(50);
+      var hex=document.querySelectorAll(".hexagon");
+      /* initialises Live Cells */
+      hex[(5)+50*(5)].style.backgroundColor="white";
+      hex[(6)+50*(6)].style.backgroundColor="white";
+      hex[(7)+50*(5)].style.backgroundColor="white";
+      hex[(8)+50*(3)].style.backgroundColor="white";
+      hex[(8)+50*(4)].style.backgroundColor="white";
+      var rows=[];
+      var cols =[];
+      /* add live cells indices to arrays of rows and cols*/
+      function live(size){
+        for(var i=0;i<size;i++){
+          for(var j=0;j<size;j++){
+            if(hex[i+j*size].style.backgroundColor=="white"){
+              rows.push(i);
+              cols.push(j);
+            }
+          }
+        }
+      }
+      
+      live(50);
+      /*Counts live neighbours */
+      function nbrs(i,j,size){
+        var count=0;
+        if(i!=0 || j!=0){
+        dirs=[hex[(i+1)+size*(j)].style.backgroundColor=="white", hex[(i)+size*(j+1)].style.backgroundColor=="white", hex[(i-1)+size*(j)].style.backgroundColor=="white", hex[(i)+size*(j-1)].style.backgroundColor=="white",hex[(i-1)+size*(j+1)].style.backgroundColor=="white", hex[(i+1)+size*(j+1)].style.backgroundColor=="white" , hex[(i-1)+size*(j-1)].style.backgroundColor=="white", hex[(i+1)+size*(j-1)].style.backgroundColor=="white"];
+        for(var i=0;i<6;i++){
+          if(dirs[i]){
+            count+=1;
+          }
+        }}
+        else{
+          dirs=[hex[(i+1)+size*(j)].style.backgroundColor=="white", hex[(i)+size*(j+1)].style.backgroundColor=="white", hex[(i+1)+size*(j+1)].style.backgroundColor=="white"];
+          for(var i=0;i<6;i++){
+          if(dirs[i]){
+            count+=1;
+          }
+        }
+        }
+        return count;
+      }
+
+      var deadrows=[];
+      var deadcols= [];
+      /* adds deadcells indices to deadrows, deadcols*/
+      function dead(size){
+        for(var i=0;i<size;i++){
+          for(var j=0;j<size;j++){
+            if(hex[i+j*size].style.backgroundColor!="white"){
+              deadrows.push(i);
+              deadcols.push(j);
+            }
+          }
+        }
+      }
+      dead(50);
+      /*Counts neighbours cells which are dead */
+      function deadnbrs(i,j,size){
+        var count=0;
+        if(i!=0 || j!=0){
+        for(var i=0;i<6;i++){
+          dirs=[hex[(i+1)+size*(j)].style.backgroundColor!="white", hex[(i)+size*(j+1)].style.backgroundColor!="white", hex[(i-1)+size*(j)].style.backgroundColor!="white", hex[(i)+size*(j-1)].style.backgroundColor!="white",hex[(i-1)+size*(j+1)].style.backgroundColor!="white", hex[(i+1)+size*(j+1)].style.backgroundColor!="white" , hex[(i-1)+size*(j-1)].style.backgroundColor!="white", hex[(i+1)+size*(j-1)].style.backgroundColor!="white"];
+          if(dirs[i]){
+            count+=1;
+          }
+          else{
+            count+=0;
+          }
+        }}
+        else{
+          for(var i=0;i<6;i++){
+          dirs=[hex[(i+1)+size*(j)].style.backgroundColor!="white", hex[(i)+size*(j+1)].style.backgroundColor!="white",hex[(i-1)+size*(j+1)].style.backgroundColor!="white", hex[(i+1)+size*(j+1)].style.backgroundColor!="white" , hex[(i-1)+size*(j-1)].style.backgroundColor!="white"];
+          if(dirs[i]){
+            count+=1;
+          }
+          else{
+            count+=0;
+          }
+        }
+        }
+        
+        return count;
+      }
+      /*if live neighbours is 2 or 3 live cell survives to next gen else it will die*/
+      function survive(size){
+        for(var i=0;i<rows.length;i++){
+          var count=nbrs(rows[i],cols[i],50);
+          if(count==2 || count==3){
+            hex[rows[i]+(size*cols[i])].style.backgroundColor="white";       
+          }
+          else{
+            hex[rows[i]+(size*cols[i])].style.backgroundColor="red";
+            delete rows[i]
+            delete cols[i]
+          }
+        }
+      }
+      /* if dead nbrs is 3 that dead cell will become alive*/
+      function rebirth(){
+        for(var i=0;i<deadrows.length;i++){
+          var count=deadnbrs(deadrows[i],deadcols[i],50);
+          if(count==3){
+            hex[deadrows[i]+(size*deadcols[i])].style.backgroundColor="white";
+            rows.push[deadrows[i]]
+            cols.push[deadcols[i]]
+            delete deadrows[i]
+            delete deadcols[i]
+            console.log("rebirth");
+          }
+          else{
+            hex[deadrows[i]+(size*deadcols[i])].style.backgroundColor="red";
+          }
+        }
+       }
+       /* after every 6th generation daedcells become alive */
+      function resurrects(size){
+        let gen;
+        for(var i=0;i<deadrows.length;i++){
+          for(var j=0;j<deadcols.length;j++){
+            if(gen%6==0){
+              hex[deadrows[i] + (deadcols[j])*size].style.backgroundColor=="white";
+              rows.push[deadrows[i]]
+              cols.push[deadcols[i]]
+              console.log("resurrects");
+            }
+            else{
+              hex[deadrows[i] + (deadcols[j])*size].style.backgroundColor!="red";
+            }
+          }
+        }
+       }
+       /*After every 4th generation a random deadcell will become alive*/
+      function randlive(){
+        let row=Math.floor(Math.random() * (49));
+        let col=Math.floor(Math.random() * (49));
+        if(gen%4==0){
+        hex[deadrows[row] + (deadcols[col])*size].style.backgroundColor=="white";
+        rows.push[deadrows[row]]
+        cols.push[deadcols[col]]
+      }
+      else{
+        console.log("6");
+      }
+      console.log(row,col)
+      }
+      function captureScreenshot(elementSelector, filename) {
+          const element = document.querySelector(elementSelector);
+          html2canvas(element).then(canvas => {
+              const imgData = canvas.toDataURL('image/png');
+              const a = document.createElement('a');
+              a.href = imgData;
+              a.download = filename;
+              a.click();
+          });
+      }
+      const btn=document.querySelector('button')
+      console.log("$gen{gen}");
+      /*when we click on the button we move to next generation */
+      captureScreenshot('.grid-container','$gen{gen}.png');
+      var gen=0;
+      btn.addEventListener('click',()=>{
+        gen+=1;
+        captureScreenshot('.grid-container','gen'+gen+'.png');
+        survive(50);
+        rebirth();
+        resurrects(50);
+        randlive();
+      })  
+    </script>
+</html>
+
+
+
+
+
